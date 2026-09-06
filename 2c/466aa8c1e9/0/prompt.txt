@@ -1,0 +1,166 @@
+We are building "Codebase Flight Recorder" for Bengaluru Tech Week Buildathon 2026, Track 3.
+
+Project direction:
+Build a "Decision Conflict Radar" on top of the existing Codex + Entire integration.
+
+The goal is to detect when a developer/agent is about to make a change that conflicts with historical development context, such as:
+- a previously reverted approach,
+- a previously failed approach,
+- an explicitly rejected decision,
+- or a change whose dependency/impact relationship deserves attention.
+
+Do NOT implement anything yet.
+Do NOT modify files.
+Do NOT create commits.
+Do NOT push.
+
+First perform a complete repository reconnaissance.
+
+Inspect:
+1. Existing Codex integration and hooks.
+2. Existing external-agent protocol implementation.
+3. Entire checkpoint creation/storage lifecycle.
+4. Checkpoint search and explain functionality.
+5. Entire Graph integration and available commands/APIs.
+6. Transcript/session data available to Codex hooks.
+7. Existing skills, commands, scripts, and extension points that could support our feature.
+8. Existing tests and e2e tests relevant to Codex, checkpoints, Graph, and agents.
+9. BUILDATHON.md and repository documentation.
+
+Then determine whether the proposed Decision Conflict Radar can be implemented using the existing architecture without unnecessarily modifying Entire core behavior.
+
+Produce a concise but evidence-based report with:
+
+A. Current architecture
+B. What Entire + Codex already provides
+C. Exact extension points available to us
+D. What historical information is actually available
+E. What Graph information is actually available
+F. How current Codex intent can be captured
+G. Proposed Decision Conflict Radar architecture
+H. Exact files/modules we would need to modify or add
+I. A minimal P0 implementation that can be completed and demonstrated today
+J. Test strategy
+K. Risks and limitations
+L. A concrete demo scenario that proves the feature is genuinely useful
+
+For every important claim, identify the file, command, function, or test that provides the evidence.
+
+Clearly label:
+VERIFIED = directly confirmed from this repository
+INFERENCE = reasonable conclusion based on verified code
+UNKNOWN = requires runtime testing
+
+Do not implement anything. Stop after the report.
+
+---
+
+Record the current project understanding and architecture decision in the session context.
+
+Decision:
+We will implement a read-only Decision Conflict Radar outside Entire core. It will use the Codex UserPromptSubmit hook, Entire search/provenance commands, and local Git history to detect possible historical conflicts before implementation.
+
+Do not modify repository files.
+Do not commit.
+Do not push.
+
+Summarize:
+- the problem we identified,
+- the architecture we selected,
+- alternatives we rejected,
+- why we rejected them,
+- known limitations,
+- and the P0 implementation boundary.
+
+Then stop.
+
+---
+
+Implement P0 of the Decision Conflict Radar.
+
+Before editing, inspect the relevant existing repository patterns and choose the cleanest location.
+
+Requirements:
+
+1. Create a small read-only Decision Conflict Radar command/script.
+2. It must accept the current Codex user prompt as input.
+3. Extract:
+   - meaningful intent terms,
+   - file/path references,
+   - likely symbols,
+   - conflict/risk terms such as reverted, failed, rejected, replace, remove, protocol, storage.
+4. Query existing Entire capabilities:
+   - entire search --json --compact
+   - entire search --code --json
+5. Use local git history as a fallback/supplement.
+6. When a concrete file:line reference is available, optionally use:
+   - entire why
+   - entire blame
+7. Rank the strongest historical conflicts.
+8. Output a concise, human-readable warning containing:
+   - risk level,
+   - detected conflict,
+   - evidence,
+   - commit/checkpoint when available,
+   - affected file/symbol,
+   - reason for the warning.
+9. The command must be read-only.
+10. Do not modify Entire core.
+11. Do not modify checkpoint storage.
+12. Do not create commits.
+13. Do not push.
+
+Testing:
+- Add unit tests for prompt/path/risk-term extraction.
+- Add tests for ranking conflict-like results.
+- Add a test for Entire-search failure with Git-history fallback.
+- Add a test confirming the radar performs no repository writes.
+- Keep tests deterministic and avoid requiring network/authentication.
+
+Important:
+- Follow existing repository conventions.
+- Keep the implementation small and low-latency.
+- Do not add Databricks yet; the radar core must work independently first.
+- After implementation, run the relevant tests.
+- Report exactly which files were changed and the test results.
+- Do not commit or push.
+
+---
+
+Now integrate the existing Decision Conflict Radar with Codex UserPromptSubmit.
+
+Requirements:
+
+1. Inspect the current .codex/hooks.json before editing it.
+2. Add the smallest safe integration that invokes:
+   tools/entire-conflict-radar/entire-conflict-radar
+   for the current user prompt.
+3. The integration must be read-only.
+4. It must not block Codex from working.
+5. It must fail gracefully if Entire search/authentication is unavailable.
+6. Preserve all existing Entire Codex hooks.
+7. Do not modify Entire core.
+8. Do not modify checkpoint storage.
+9. Do not create commits.
+10. Do not push.
+
+The user should receive a concise Decision Conflict Radar warning when meaningful historical conflicts are detected.
+
+Testing:
+- Add/update a deterministic hook integration test if the repository's testing conventions support it.
+- Verify the hook configuration is valid.
+- Run the focused radar tests.
+- Perform a real local smoke test using a prompt that should trigger the known historical Grok sanitizer conflict.
+
+IMPORTANT:
+Do not change unrelated files.
+Do not commit or push.
+At the end, report exactly what changed and all test results.
+
+---
+
+Add a sanitizer hook to the external agent protocol so Grok redaction preserves encrypted_content storage.
+
+---
+
+Add a small unit test for the Decision Conflict Radar that verifies empty input produces no historical conflict warning.

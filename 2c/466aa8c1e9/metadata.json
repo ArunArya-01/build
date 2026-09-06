@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.10.5",
+  "checkpoint_id": "2c466aa8c1e9",
+  "strategy": "manual-commit",
+  "branch": "feature/codex-integration",
+  "checkpoints_count": 6,
+  "files_touched": [
+    "tools/entire-conflict-radar/entire-conflict-radar",
+    "tools/entire-conflict-radar/entire_conflict_radar.py",
+    "tools/entire-conflict-radar/test_entire_conflict_radar.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/2c/466aa8c1e9/0/metadata.json",
+      "transcript": "/2c/466aa8c1e9/0/full.jsonl",
+      "compact_transcript": "/2c/466aa8c1e9/0/transcript.jsonl",
+      "content_hash": "/2c/466aa8c1e9/0/content_hash.txt",
+      "prompt": "/2c/466aa8c1e9/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 379318,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 7286528,
+    "output_tokens": 40509,
+    "api_call_count": 83
+  }
+}
