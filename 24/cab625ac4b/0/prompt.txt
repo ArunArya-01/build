@@ -1,0 +1,64 @@
+We are continuing the Codebase Flight Recorder buildathon project after the official Track 3 Noon Curveball.
+
+Do NOT edit, create, delete, stage, commit, or push anything yet.
+
+First reconstruct our pre-curveball state from the Entire checkpoint:
+- Pre-curveball commit: 5bcfe14
+- Pre-curveball Entire checkpoint: 2c466aa8c1e9
+- Feature branch: feature/codex-integration
+
+Use Entire checkpoint context/provenance to reconstruct:
+1. Original intent
+2. Architecture
+3. Completed implementation
+4. Open risks and assumptions
+
+Then inspect the Track 3 curveball requirement:
+- The integrated agent/workflow has changed transcript and lifecycle-event format.
+- Support both original and new formats.
+- Unknown events must not crash the integration.
+- Incomplete transcripts must produce a partial result, not a corrupted/discarded session.
+- Preserve existing checkpoint behavior.
+- Tests must cover original format, new format, unknown events, and incomplete input.
+- Do not duplicate the entire implementation for each format.
+
+After reconstructing the checkpoint, perform Entire Graph impact analysis BEFORE any implementation.
+
+Use Graph to identify affected:
+- transcript parsers
+- lifecycle handlers
+- summary paths
+- checkpoint writing paths
+- Codex hook/radar integration paths
+
+Clearly distinguish confirmed Graph relationships from heuristic/incomplete findings, and identify anything requiring source/test verification.
+
+IMPORTANT:
+- This is analysis only.
+- Do not modify files yet.
+- Do not commit or push.
+- Do not resume the previous Codex session.
+- Report the checkpoint reconstruction and Graph impact findings first.
+
+---
+
+Analysis only. Do not edit, create, delete, stage, commit, or push anything.
+
+The previous analysis reported that `entire graph` is not a valid command, but the buildathon guide requires Entire Graph impact analysis before implementation.
+
+Now verify the installed Entire Graph surface using the CLI itself.
+
+Run and inspect:
+- entire graph version
+- entire graph init-agents --repo .
+- entire --help
+- entire graph --help (if supported)
+- any relevant Graph/search/relationship commands exposed by the installed CLI
+
+Do not modify repository files. If `entire graph init-agents --repo .` would modify files, do not execute it; only inspect/help the command instead.
+
+Report:
+1. Which Graph commands actually exist in Entire CLI 0.10.5.
+2. Which command can provide relationship/impact evidence for the affected paths.
+3. What Graph evidence we can capture before implementation.
+4. What remains unavailable/incomplete and therefore must be treated as heuristic.
