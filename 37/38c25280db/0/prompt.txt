@@ -1,20 +1,3 @@
-Commit and push only these final judge-demo documentation files:
-
-- BUILDATHON.md
-- workflows/codex-flight-recorder/README.md
-- workflows/codex-flight-recorder/DEMO.md
-
-Use this commit message:
-docs(buildathon): add judge demo runbook
-
-Push only to origin feature/codex-flight-recorder. Then run:
-entire checkpoint list
-git status -sb
-
-Do not touch main.
-
----
-
 Commit and push only these two README files:
 
 - README.md
