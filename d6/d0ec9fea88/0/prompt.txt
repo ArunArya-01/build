@@ -1,0 +1,44 @@
+Implement the next small task for the Decision Conflict Radar curveball.
+
+Add exactly one focused regression test that reads the repository-root fixture:
+track-3-agent-session.jsonl
+
+The test must:
+- load the fixture using a path derived from the test file/repository location, not an absolute machine-specific path;
+- pass the full fixture text to normalize_prompt_input();
+- assert that the expected user prompt is recovered:
+  "Add coupon validation to checkout. Coupons should be rejected if expired, disabled, or below the minimum cart value. Add tests."
+- assert normalized.incomplete is False;
+- assert the checkpoint_created event does not become prompt text;
+- keep the production implementation unchanged;
+- do not modify .entire files, README.md, or unrelated files;
+- do not stage, commit, or push.
+
+After editing, run the focused test and the full radar test suite.
+
+---
+
+Fix the failing official curveball fixture regression test.
+
+Current failure:
+normalize_prompt_input(track-3-agent-session.jsonl) returns fixture timestamps/other event fields instead of only the actual user prompt.
+
+Requirements:
+- Preserve support for the original input format.
+- Preserve support for Codex nested response_item and event_msg formats already implemented.
+- For the official fixture's format, recognize its lifecycle records by the `event` field.
+- Only the `user_prompt` lifecycle event's `text` field should become prompt text.
+- Do NOT treat arbitrary `text`, `summary`, `intent`, timestamps, agent metadata, checkpoint metadata, or other lifecycle-event fields as prompt text.
+- Unknown lifecycle events must still be ignored without crashing.
+- Incomplete/truncated JSONL behavior must remain intact.
+- Keep the production architecture as a single normalization layer; do not duplicate the analyzer.
+- Do not modify .entire, README.md, hooks configuration, or unrelated files.
+- Do not stage, commit, or push.
+
+After the fix:
+1. Run the focused fixture regression test.
+2. Run the full radar test suite.
+3. Run compileall.
+4. Run git diff --check.
+
+Do not change the test's intended assertions merely to make it pass.
