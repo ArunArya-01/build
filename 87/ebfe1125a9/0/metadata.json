@@ -1,0 +1,57 @@
+{
+  "cli_version": "0.10.5",
+  "checkpoint_id": "87ebfe1125a9",
+  "session_id": "01a07574-0ce7-7da3-9f42-68ca692b0ca8",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-06T09:17:27.553596Z",
+  "branch": "feature/codex-flight-recorder",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "BUILDATHON.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.6-terra",
+  "turn_id": "563295b2b50d",
+  "checkpoint_transcript_start": 590,
+  "transcript_lines_at_start": 590,
+  "compact_transcript_start": 79,
+  "token_usage": {
+    "input_tokens": 962,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 121600,
+    "output_tokens": 127,
+    "api_call_count": 1
+  },
+  "session_metrics": {
+    "turn_count": 12
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-06T09:17:27.51324Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 21,
+    "total_committed": 0,
+    "total_lines_changed": 21,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 394,
+      "user_lines_removed": 21,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "BUILDATHON.md": 132,
+        "output/pdf/Codebase_Flight_Recorder_Project_Brief.pdf": 131,
+        "output/pdf/Codebase_Flight_Recorder_Submission_Documentation.pdf": 131
+      },
+      "user_removed_per_file": {
+        "BUILDATHON.md": 21
+      }
+    }
+  ]
+}

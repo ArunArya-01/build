@@ -1,0 +1,26 @@
+Commit and push only these two README files:
+
+- README.md
+- workflows/codex-flight-recorder/README.md
+
+Use:
+docs(readme): document flight recorder workflow
+
+Push only to origin feature/codex-flight-recorder. Do not add or commit the untracked output/ directory, and do not touch main.
+
+Then run:
+entire checkpoint list
+git status -sb
+
+---
+
+Commit and push only BUILDATHON.md.
+
+Use:
+docs(buildathon): strengthen submission evidence
+
+Push only to origin feature/codex-flight-recorder. Do not add or commit output/. Do not touch main.
+
+Then run:
+entire checkpoint list
+git status -sb
