@@ -1,0 +1,13 @@
+#!/usr/bin/env python3
+"""Executable wrapper for Entire's kubectl-style external command discovery."""
+
+from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from entire_conflict_radar import main
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
