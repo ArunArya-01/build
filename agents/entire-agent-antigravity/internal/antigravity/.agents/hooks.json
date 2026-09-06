@@ -1,0 +1,37 @@
+{
+  "flight-recorder-audit": {
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "entire-agent-antigravity hook-handler post-tool",
+            "timeout": 10,
+            "type": "command"
+          }
+        ],
+        "matcher": "*"
+      }
+    ],
+    "enabled": true
+  },
+  "flight-recorder-briefing": {
+    "PreInvocation": [
+      {
+        "command": "entire-agent-antigravity hook-handler pre-invocation",
+        "timeout": 15,
+        "type": "command"
+      }
+    ],
+    "enabled": true
+  },
+  "flight-recorder-stop": {
+    "Stop": [
+      {
+        "command": "entire-agent-antigravity hook-handler stop",
+        "timeout": 30,
+        "type": "command"
+      }
+    ],
+    "enabled": true
+  }
+}
