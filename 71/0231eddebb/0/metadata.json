@@ -1,0 +1,66 @@
+{
+  "cli_version": "0.10.5",
+  "checkpoint_id": "710231eddebb",
+  "session_id": "01a07574-0ce7-7da3-9f42-68ca692b0ca8",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-06T07:04:37.734737Z",
+  "branch": "feature/codex-flight-recorder",
+  "checkpoints_count": 3,
+  "save_step_count": 2,
+  "files_touched": [
+    "workflows/codex-flight-recorder/README.md",
+    "workflows/codex-flight-recorder/cmd/codex-flight-recorder/main.go",
+    "workflows/codex-flight-recorder/internal/briefing/briefing.go",
+    "workflows/codex-flight-recorder/internal/briefing/briefing_test.go",
+    "workflows/codex-flight-recorder/internal/briefing/testdata/track-3-agent-session.jsonl"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.6-terra",
+  "turn_id": "51f54036b461",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 63592,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 835584,
+    "output_tokens": 13136,
+    "api_call_count": 28
+  },
+  "session_metrics": {
+    "turn_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-06T07:04:37.712827Z",
+    "agent_lines": 311,
+    "agent_removed": 5,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 311,
+    "total_lines_changed": 316,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 311,
+      "agent_lines_removed": 5
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 311,
+      "agent_lines_removed": 5
+    }
+  ]
+}

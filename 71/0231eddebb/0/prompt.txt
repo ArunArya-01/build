@@ -1,0 +1,35 @@
+This is the Noon Curveball fresh session. Before editing code, run `entire checkpoint explain f5cd17137c90` and reconstruct the project’s intent, architecture, completed work, verification, and open risks. Then run Entire Graph impact analysis for the Codebase Flight Recorder workflow. Do not edit yet; report the reconstruction and Graph findings first.
+
+---
+
+The organizer’s new-format fixture is at:
+ /Users/arunarya/Downloads/track-3-agent-session.jsonl
+
+Implement the Track 3 Curveball only inside workflows/codex-flight-recorder.
+
+Before editing, run Entire Graph search and impact analysis for the history parser, Markdown summary, and checkpoint evidence paths. Do not edit the external-agent adapters.
+
+Requirements:
+1. Keep the existing reviewed JSON-array development-history format fully compatible.
+2. Add support for the new JSONL lifecycle/transcript format in the supplied fixture.
+3. Normalize both formats into the existing risk-analysis pipeline rather than creating duplicate logic.
+4. Capture useful signals from session_started, file_changed, tool_result, checkpoint_created, and session_ended.
+5. Ignore unknown event types safely and report that they were ignored; they must never crash parsing.
+6. If JSONL ends before session_ended, retain the evidence but explicitly label it PARTIAL and add a warning that it requires verification.
+7. Preserve existing Entire checkpoint listing behavior. checkpoint_created JSONL events are historical context only; native Entire/Codex hooks still create real checkpoints.
+8. Add tests for original JSON format, supplied new JSONL format, unknown events, and incomplete JSONL.
+9. Add the supplied fixture to workflow testdata, update README with Curveball compatibility, run go test ./..., git diff --check, and show me the diff.
+10. Do not commit or push yet.
+
+---
+
+Continue from the current uncommitted Curveball changes. Finish the implementation and tests now.
+
+Run:
+1. gofmt on modified Go files
+2. go test ./...
+3. git diff --check
+4. git status -sb
+5. show a concise summary of changed files and test results
+
+Fix any failures. Do not commit or push yet.
