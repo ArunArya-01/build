@@ -68,6 +68,21 @@ class DecisionConflictRadarTests(unittest.TestCase):
         self.assertIn(event_msg_prompt, normalized.prompt_text)
         self.assertFalse(normalized.incomplete)
 
+    def test_track_3_agent_session_fixture_recovers_only_user_prompt(self):
+        fixture_path = Path(__file__).resolve().parents[2] / "track-3-agent-session.jsonl"
+        fixture_text = fixture_path.read_text(encoding="utf-8")
+        expected_prompt = (
+            "Add coupon validation to checkout. Coupons should be rejected if expired, "
+            "disabled, or below the minimum cart value. Add tests."
+        )
+
+        normalized = radar.normalize_prompt_input(fixture_text)
+
+        self.assertEqual(normalized.prompt_text, expected_prompt)
+        self.assertFalse(normalized.incomplete)
+        self.assertNotIn("Coupon validation implemented and tested.", normalized.prompt_text)
+        self.assertNotIn("Reject expired, disabled, or minimum-cart-value-ineligible coupons", normalized.prompt_text)
+
     def test_unknown_event_record_is_ignored_without_using_metadata_as_prompt(self):
         payload = {
             "type": "future_lifecycle_event",

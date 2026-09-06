@@ -162,6 +162,18 @@ def unique_ordered(values: Iterable[str]) -> tuple[str, ...]:
     return tuple(out)
 
 
+def unique_prompt_texts(values: Iterable[str]) -> tuple[str, ...]:
+    seen: set[str] = set()
+    out: list[str] = []
+    for value in values:
+        cleaned = value.strip()
+        key = cleaned.lower()
+        if cleaned and key not in seen:
+            seen.add(key)
+            out.append(cleaned)
+    return tuple(out)
+
+
 def extract_prompt_text(raw: str) -> str:
     return normalize_prompt_input(raw).prompt_text
 
@@ -259,7 +271,7 @@ def normalize_jsonl_prompt_input(raw: str) -> NormalizedPromptInput:
     if not saw_jsonl_shape:
         return NormalizedPromptInput("")
 
-    prompt_text = "\n\n".join(unique_ordered(prompts))
+    prompt_text = "\n\n".join(unique_prompt_texts(prompts))
     if not prompt_text and incomplete and parsed_records == 0:
         prompt_text = raw.strip()
 
@@ -331,21 +343,50 @@ def find_content_block_text(value: Any) -> str:
 
 
 def is_event_record(value: dict[str, Any]) -> bool:
-    return "type" in value and "payload" in value
+    return is_codex_event_record(value) or is_lifecycle_event_record(value)
 
 
 def is_known_event_record(value: dict[str, Any]) -> bool:
-    return value.get("type") in {
-        "response_item",
-        "event_msg",
-        "session_meta",
-        "world_state",
-        "turn_context",
-        "token_usage_record",
-    }
+    if is_codex_event_record(value):
+        return value.get("type") in {
+            "response_item",
+            "event_msg",
+            "session_meta",
+            "world_state",
+            "turn_context",
+            "token_usage_record",
+        }
+    if is_lifecycle_event_record(value):
+        return value.get("event") in {
+            "agent_response",
+            "checkpoint_created",
+            "file_changed",
+            "file_read",
+            "session_ended",
+            "session_started",
+            "tool_call",
+            "tool_result",
+            "usage",
+            "user_prompt",
+        }
+    return False
+
+
+def is_codex_event_record(value: dict[str, Any]) -> bool:
+    return "type" in value and "payload" in value
+
+
+def is_lifecycle_event_record(value: dict[str, Any]) -> bool:
+    return isinstance(value.get("event"), str)
 
 
 def find_event_prompt_value(value: dict[str, Any]) -> str:
+    if is_lifecycle_event_record(value):
+        if value.get("event") != "user_prompt":
+            return ""
+        text = value.get("text")
+        return text if isinstance(text, str) else ""
+
     record_type = value.get("type")
     payload = value.get("payload")
 
