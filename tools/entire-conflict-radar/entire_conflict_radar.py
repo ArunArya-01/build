@@ -7,6 +7,7 @@ import argparse
 import json
 import os
 import re
+import select
 import subprocess
 import sys
 from dataclasses import dataclass, field
@@ -90,6 +91,9 @@ SYMBOL_RE = re.compile(
 )
 WORD_RE = re.compile(r"[A-Za-z][A-Za-z0-9_-]{2,}")
 COMMIT_RE = re.compile(r"\b[0-9a-f]{7,40}\b", re.IGNORECASE)
+HOOK_STDIN_IDLE_TIMEOUT = 0.1
+HOOK_STDIN_MAX_BYTES = 1024 * 1024
+HOOK_STDIN_CHUNK_SIZE = 64 * 1024
 
 
 @dataclass(frozen=True)
@@ -119,6 +123,13 @@ class Evidence:
     symbol: str = ""
     score: int = 0
     reasons: list[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class NormalizedPromptInput:
+    prompt_text: str
+    incomplete: bool = False
+    unknown_events: int = 0
 
 
 Runner = Callable[[list[str], Path, float], CommandResult]
@@ -152,15 +163,111 @@ def unique_ordered(values: Iterable[str]) -> tuple[str, ...]:
 
 
 def extract_prompt_text(raw: str) -> str:
+    return normalize_prompt_input(raw).prompt_text
+
+
+def read_codex_hook_stdin(
+    stream: Any,
+    idle_timeout: float = HOOK_STDIN_IDLE_TIMEOUT,
+    max_bytes: int = HOOK_STDIN_MAX_BYTES,
+) -> str:
+    try:
+        fd = stream.fileno()
+    except (AttributeError, OSError, ValueError):
+        try:
+            return stream.read()
+        except Exception:
+            return ""
+
+    try:
+        if stream.isatty():
+            return ""
+    except Exception:
+        pass
+
+    chunks: list[bytes] = []
+    remaining = max(0, max_bytes)
+    while remaining:
+        try:
+            ready, _, _ = select.select([fd], [], [], idle_timeout)
+        except (OSError, ValueError):
+            return ""
+        if not ready:
+            break
+        try:
+            chunk = os.read(fd, min(HOOK_STDIN_CHUNK_SIZE, remaining))
+        except BlockingIOError:
+            break
+        except OSError:
+            return ""
+        if not chunk:
+            break
+        chunks.append(chunk)
+        remaining -= len(chunk)
+
+    encoding = getattr(stream, "encoding", None) or "utf-8"
+    return b"".join(chunks).decode(encoding, errors="replace")
+
+
+def normalize_prompt_input(raw: str) -> NormalizedPromptInput:
     stripped = raw.strip()
     if not stripped:
-        return ""
+        return NormalizedPromptInput("")
     try:
         parsed = json.loads(stripped)
     except json.JSONDecodeError:
-        return stripped
+        jsonl = normalize_jsonl_prompt_input(raw)
+        if jsonl.prompt_text or jsonl.incomplete or jsonl.unknown_events:
+            return jsonl
+        return NormalizedPromptInput(stripped, incomplete=looks_like_json(stripped))
+
     found = find_prompt_value(parsed)
-    return found if found else stripped
+    if found:
+        return NormalizedPromptInput(found)
+    if isinstance(parsed, dict) and is_event_record(parsed):
+        return NormalizedPromptInput("", unknown_events=0 if is_known_event_record(parsed) else 1)
+    return NormalizedPromptInput(stripped)
+
+
+def normalize_jsonl_prompt_input(raw: str) -> NormalizedPromptInput:
+    prompts: list[str] = []
+    incomplete = False
+    unknown_events = 0
+    saw_jsonl_shape = False
+    parsed_records = 0
+
+    for line in raw.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if not looks_like_json(stripped):
+            incomplete = True
+            continue
+        saw_jsonl_shape = True
+        try:
+            parsed = json.loads(stripped)
+        except json.JSONDecodeError:
+            incomplete = True
+            continue
+        parsed_records += 1
+        found = find_prompt_value(parsed)
+        if found:
+            prompts.append(found)
+        elif isinstance(parsed, dict) and is_event_record(parsed) and not is_known_event_record(parsed):
+            unknown_events += 1
+
+    if not saw_jsonl_shape:
+        return NormalizedPromptInput("")
+
+    prompt_text = "\n\n".join(unique_ordered(prompts))
+    if not prompt_text and incomplete and parsed_records == 0:
+        prompt_text = raw.strip()
+
+    return NormalizedPromptInput(prompt_text, incomplete=incomplete, unknown_events=unknown_events)
+
+
+def looks_like_json(value: str) -> bool:
+    return value.startswith("{") or value.startswith("[")
 
 
 def find_prompt_value(value: Any) -> str:
@@ -172,15 +279,93 @@ def find_prompt_value(value: Any) -> str:
             if found:
                 return found
     if isinstance(value, dict):
+        event_prompt = find_event_prompt_value(value)
+        if event_prompt:
+            return event_prompt
+        if is_event_record(value):
+            return ""
         for key in ("user_prompt", "userPrompt", "prompt", "message", "content", "input"):
             if key in value:
-                found = find_prompt_value(value[key])
+                found = find_prompt_field_value(value[key])
                 if found:
                     return found
         for item in value.values():
             found = find_prompt_value(item)
             if found:
                 return found
+    return ""
+
+
+def find_prompt_field_value(value: Any) -> str:
+    if isinstance(value, str):
+        return value
+    if isinstance(value, list):
+        text_parts = [text for item in value if (text := find_content_block_text(item))]
+        if text_parts:
+            return "\n".join(text_parts)
+        for item in value:
+            found = find_prompt_field_value(item)
+            if found:
+                return found
+        return ""
+    if isinstance(value, dict):
+        block_text = find_content_block_text(value)
+        if block_text:
+            return block_text
+        return find_prompt_value(value)
+    return ""
+
+
+def find_content_block_text(value: Any) -> str:
+    if isinstance(value, str):
+        return value
+    if not isinstance(value, dict):
+        return ""
+    text = value.get("text")
+    block_type = value.get("type")
+    if isinstance(text, str) and (
+        block_type in (None, "text", "input_text", "output_text") or str(block_type).endswith("_text")
+    ):
+        return text
+    return ""
+
+
+def is_event_record(value: dict[str, Any]) -> bool:
+    return "type" in value and "payload" in value
+
+
+def is_known_event_record(value: dict[str, Any]) -> bool:
+    return value.get("type") in {
+        "response_item",
+        "event_msg",
+        "session_meta",
+        "world_state",
+        "turn_context",
+        "token_usage_record",
+    }
+
+
+def find_event_prompt_value(value: dict[str, Any]) -> str:
+    record_type = value.get("type")
+    payload = value.get("payload")
+
+    if record_type == "response_item":
+        if not isinstance(payload, dict):
+            return ""
+        if payload.get("type") == "message" and payload.get("role") == "user":
+            return find_prompt_field_value(payload.get("content"))
+        return ""
+
+    if record_type == "event_msg":
+        if not isinstance(payload, dict):
+            return ""
+        item = payload.get("item")
+        if not isinstance(item, dict):
+            return ""
+        if item.get("type") == "UserMessage":
+            return find_prompt_field_value(item.get("content"))
+        return ""
+
     return ""
 
 
@@ -480,8 +665,13 @@ def risk_level(score: int) -> str:
     return "LOW"
 
 
-def render_warning(items: list[Evidence]) -> str:
+def render_warning(items: list[Evidence], incomplete_context: bool = False) -> str:
     if not items:
+        if incomplete_context:
+            return (
+                "Decision Conflict Radar: incomplete input context; "
+                "no strong historical conflicts found."
+            )
         return "Decision Conflict Radar: no strong historical conflicts found."
 
     highest = risk_level(items[0].score)
@@ -489,6 +679,13 @@ def render_warning(items: list[Evidence]) -> str:
         f"Decision Conflict Radar: {highest} risk ({len(items)} possible historical conflict{'s' if len(items) != 1 else ''})",
         "",
     ]
+    if incomplete_context:
+        lines.extend(
+            [
+                "Input context: partial/incomplete; findings are based on recovered prompt text.",
+                "",
+            ]
+        )
     for idx, item in enumerate(items, 1):
         affected = item.path or item.symbol or "not specified"
         if item.line and item.path:
@@ -534,12 +731,15 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv or sys.argv[1:])
+    normalized = NormalizedPromptInput("")
     if args.prompt:
         prompt = args.prompt
     elif args.prompt_words:
         prompt = " ".join(args.prompt_words)
     else:
-        prompt = extract_prompt_text(sys.stdin.read())
+        raw = read_codex_hook_stdin(sys.stdin) if args.codex_hook else sys.stdin.read()
+        normalized = normalize_prompt_input(raw)
+        prompt = normalized.prompt_text
 
     repo = Path(args.repo).resolve()
     findings = analyze(
@@ -549,10 +749,10 @@ def main(argv: list[str] | None = None) -> int:
         command_timeout=max(0.2, args.command_timeout),
     )
     if args.codex_hook:
-        if findings:
-            print(json.dumps({"systemMessage": render_warning(findings)}))
+        if findings or (normalized.incomplete and prompt):
+            print(json.dumps({"systemMessage": render_warning(findings, normalized.incomplete)}))
     else:
-        print(render_warning(findings))
+        print(render_warning(findings, normalized.incomplete))
     return 0
 
 

@@ -1,8 +1,13 @@
+import contextlib
+import io
 import json
 import os
+import sys
+import time
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import entire_conflict_radar as radar
 
@@ -21,6 +26,92 @@ class FakeRunner:
 
 
 class DecisionConflictRadarTests(unittest.TestCase):
+    def test_original_direct_input_format_normalizes_to_prompt_text(self):
+        prompt = "Remove failed checkpoint transcript parser path"
+        payload = {"user_prompt": prompt, "hook_event_name": "UserPromptSubmit"}
+
+        normalized = radar.normalize_prompt_input(json.dumps(payload))
+
+        self.assertEqual(normalized.prompt_text, prompt)
+        self.assertFalse(normalized.incomplete)
+        self.assertEqual(radar.extract_prompt_text(json.dumps(payload)), prompt)
+
+    def test_new_nested_codex_response_item_and_event_msg_format(self):
+        response_item_prompt = (
+            "Replace sanitizeTranscriptForStorage in "
+            "agents/entire-agent-grok/internal/grok/native_transcript.go"
+        )
+        event_msg_prompt = "Remove failed checkpoint transcript path"
+        records = [
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "message",
+                    "role": "user",
+                    "content": [{"type": "input_text", "text": response_item_prompt}],
+                },
+            },
+            {
+                "type": "event_msg",
+                "payload": {
+                    "item": {
+                        "type": "UserMessage",
+                        "content": [{"type": "text", "text": event_msg_prompt}],
+                    }
+                },
+            },
+        ]
+
+        normalized = radar.normalize_prompt_input("\n".join(json.dumps(record) for record in records))
+
+        self.assertIn(response_item_prompt, normalized.prompt_text)
+        self.assertIn(event_msg_prompt, normalized.prompt_text)
+        self.assertFalse(normalized.incomplete)
+
+    def test_unknown_event_record_is_ignored_without_using_metadata_as_prompt(self):
+        payload = {
+            "type": "future_lifecycle_event",
+            "payload": {
+                "message": "Remove failed protocol storage path",
+                "content": [{"type": "text", "text": "Replace checkpoint writer"}],
+            },
+        }
+
+        normalized = radar.normalize_prompt_input(json.dumps(payload))
+
+        self.assertEqual(normalized.prompt_text, "")
+        self.assertFalse(normalized.incomplete)
+        self.assertEqual(normalized.unknown_events, 1)
+
+    def test_incomplete_jsonl_recovers_partial_prompt_and_marks_context(self):
+        prompt = "Remove failed protocol storage path"
+        good_record = {
+            "type": "response_item",
+            "payload": {
+                "type": "message",
+                "role": "user",
+                "content": [{"type": "input_text", "text": prompt}],
+            },
+        }
+        raw = json.dumps(good_record) + "\n" + '{"type":"response_item","payload":'
+
+        normalized = radar.normalize_prompt_input(raw)
+
+        self.assertEqual(normalized.prompt_text, prompt)
+        self.assertTrue(normalized.incomplete)
+        self.assertIn(
+            "incomplete input context",
+            radar.render_warning([], incomplete_context=normalized.incomplete),
+        )
+
+    def test_malformed_json_is_partial_raw_context_not_a_crash(self):
+        raw = '{"user_prompt":"Remove failed protocol storage path"'
+
+        normalized = radar.normalize_prompt_input(raw)
+
+        self.assertIn("Remove failed protocol storage path", normalized.prompt_text)
+        self.assertTrue(normalized.incomplete)
+
     def test_extracts_prompt_paths_symbols_and_risk_terms(self):
         prompt = (
             "Replace sanitizeTranscriptForStorage() in "
@@ -128,6 +219,73 @@ class DecisionConflictRadarTests(unittest.TestCase):
             "Decision Conflict Radar: no strong historical conflicts found.",
         )
         self.assertEqual(fake.calls, [])
+        normalized = radar.normalize_prompt_input("")
+        self.assertEqual(normalized.prompt_text, "")
+        self.assertFalse(normalized.incomplete)
+
+    def test_codex_hook_with_no_stdin_available_does_not_block(self):
+        read_fd, write_fd = os.pipe()
+        try:
+            with os.fdopen(read_fd, "r", encoding="utf-8") as stdin:
+                stdout = io.StringIO()
+                start = time.monotonic()
+                with patch.object(sys, "stdin", stdin), contextlib.redirect_stdout(stdout):
+                    code = radar.main(["--codex-hook", "--repo", ".", "--limit", "1", "--command-timeout", "0.2"])
+                elapsed = time.monotonic() - start
+        finally:
+            os.close(write_fd)
+
+        self.assertEqual(code, 0)
+        self.assertLess(elapsed, 0.5)
+        self.assertEqual(stdout.getvalue(), "")
+
+    def test_codex_hook_with_valid_payload_normalizes_and_analyzes(self):
+        prompt = "Add a unit test for the radar"
+        payload = {"hook_event_name": "UserPromptSubmit", "turn_id": "turn-1", "prompt": prompt}
+        item = radar.Evidence(
+            source="git history",
+            title="Add amp external agent",
+            text="Add amp external agent with protocol tests.",
+            commit="79fccc096a45",
+            checkpoint="125b3e427dda",
+            score=24,
+            reasons=["matches intent terms: test"],
+        )
+        stdout = io.StringIO()
+        read_fd, write_fd = os.pipe()
+        try:
+            os.write(write_fd, json.dumps(payload).encode("utf-8"))
+            with os.fdopen(read_fd, "r", encoding="utf-8") as stdin:
+                with (
+                    patch.object(sys, "stdin", stdin),
+                    patch.object(radar, "analyze", return_value=[item]) as analyze,
+                    contextlib.redirect_stdout(stdout),
+                ):
+                    code = radar.main(["--codex-hook", "--repo", ".", "--limit", "1", "--command-timeout", "0.2"])
+        finally:
+            os.close(write_fd)
+
+        self.assertEqual(code, 0)
+        analyze.assert_called_once()
+        self.assertEqual(analyze.call_args.args[0], prompt)
+        emitted = json.loads(stdout.getvalue())
+        self.assertIn("systemMessage", emitted)
+        self.assertIn("Decision Conflict Radar: HIGH risk", emitted["systemMessage"])
+
+    def test_codex_hook_with_malformed_input_uses_incomplete_normalization(self):
+        raw = '{"user_prompt":"Remove failed protocol storage path"'
+        stdout = io.StringIO()
+
+        with (
+            patch.object(sys, "stdin", io.StringIO(raw)),
+            patch.object(radar, "analyze", return_value=[]),
+            contextlib.redirect_stdout(stdout),
+        ):
+            code = radar.main(["--codex-hook", "--repo", ".", "--limit", "1", "--command-timeout", "0.2"])
+
+        self.assertEqual(code, 0)
+        emitted = json.loads(stdout.getvalue())
+        self.assertIn("incomplete input context", emitted["systemMessage"])
 
     def test_hook_warning_payload_is_codex_system_message(self):
         item = radar.Evidence(
