@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.10.5",
+  "checkpoint_id": "3738c25280db",
+  "strategy": "manual-commit",
+  "branch": "feature/codex-flight-recorder",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "README.md",
+    "workflows/codex-flight-recorder/README.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/37/38c25280db/0/metadata.json",
+      "transcript": "/37/38c25280db/0/full.jsonl",
+      "compact_transcript": "/37/38c25280db/0/transcript.jsonl",
+      "content_hash": "/37/38c25280db/0/content_hash.txt",
+      "prompt": "/37/38c25280db/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 363,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 117504,
+    "output_tokens": 132,
+    "api_call_count": 1
+  }
+}

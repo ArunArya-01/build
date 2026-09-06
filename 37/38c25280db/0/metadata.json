@@ -1,0 +1,59 @@
+{
+  "cli_version": "0.10.5",
+  "checkpoint_id": "3738c25280db",
+  "session_id": "01a07574-0ce7-7da3-9f42-68ca692b0ca8",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-06T09:14:24.741116Z",
+  "branch": "feature/codex-flight-recorder",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "README.md",
+    "workflows/codex-flight-recorder/README.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.6-terra",
+  "turn_id": "8b867d90bdb3",
+  "checkpoint_transcript_start": 553,
+  "transcript_lines_at_start": 553,
+  "compact_transcript_start": 74,
+  "token_usage": {
+    "input_tokens": 363,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 117504,
+    "output_tokens": 132,
+    "api_call_count": 1
+  },
+  "session_metrics": {
+    "turn_count": 11
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-06T09:14:24.701443Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 25,
+    "total_committed": 0,
+    "total_lines_changed": 25,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 503,
+      "user_lines_removed": 25,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "README.md": 4,
+        "output/pdf/Codebase_Flight_Recorder_Project_Brief.pdf": 131,
+        "output/pdf/Codebase_Flight_Recorder_Submission_Documentation.pdf": 131,
+        "workflows/codex-flight-recorder/README.md": 237
+      },
+      "user_removed_per_file": {
+        "workflows/codex-flight-recorder/README.md": 25
+      }
+    }
+  ]
+}
