@@ -1,0 +1,70 @@
+We found a concrete curveball regression. Do not commit or push.
+
+Evidence:
+- Normal mode completes successfully:
+  timeout 5s tools/entire-conflict-radar/entire-conflict-radar --prompt "Add a unit test for the radar" --repo . --limit 1 --command-timeout 1.5
+  => exit 0
+- Codex-hook mode hangs:
+  timeout 5s tools/entire-conflict-radar/entire-conflict-radar --codex-hook --repo . --limit 1 --command-timeout 0.2
+  => exit 124
+
+Diagnose ONLY the --codex-hook execution path.
+
+Inspect:
+- normalize_prompt_input()
+- codex-hook stdin/payload reading
+- JSON/JSONL parsing
+- incomplete-input handling
+- any stdin reads that could wait indefinitely
+- the actual Codex hook payload contract if available locally
+
+Reproduce the hang with a bounded command if useful.
+
+Do not make broad changes yet. Do not modify hook configuration.
+Do not commit or push.
+
+Report the exact root cause and the smallest safe fix before implementing it.
+
+---
+
+Implement ONLY the diagnosed --codex-hook stdin hang fix.
+
+Root cause:
+--codex-hook reaches sys.stdin.read(), which waits indefinitely for EOF when stdin remains open but idle. --command-timeout does not constrain this read.
+
+Smallest safe fix:
+- Add a hook-only bounded stdin reader.
+- It must not wait indefinitely for EOF.
+- If no stdin bytes become available within a short bounded idle period, treat input as empty and exit successfully with no warning.
+- If bytes arrive, collect available input without waiting indefinitely for EOF.
+- Pass collected input through the existing normalize_prompt_input() layer.
+- Keep --prompt and positional-prompt behavior unchanged.
+- Do not change .codex/hooks.json.
+- Do not change Entire checkpoint hooks.
+- Do not alter search, ranking, or warning logic except where necessary for the bounded read.
+- Do not add a dependency unless absolutely necessary; prefer the Python standard library.
+- Preserve fail-open behavior.
+
+Add deterministic tests specifically covering:
+1. Hook mode with no stdin available does not block.
+2. Hook mode with a valid payload still normalizes and analyzes.
+3. Existing malformed/incomplete input behavior remains safe.
+4. Existing empty-input behavior remains unchanged.
+
+Then run the complete radar test suite.
+
+Also rerun:
+timeout 5s tools/entire-conflict-radar/entire-conflict-radar \
+  --codex-hook --repo . --limit 1 --command-timeout 0.2
+and verify it exits without hanging.
+
+Do not stage, commit, or push.
+
+---
+
+cd ~/build
+codex
+
+---
+
+Reply with exactly: CURVEBALL_HOOK_OK

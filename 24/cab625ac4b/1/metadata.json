@@ -1,0 +1,58 @@
+{
+  "cli_version": "0.10.5",
+  "checkpoint_id": "24cab625ac4b",
+  "session_id": "01a07586-7d5b-7bf3-a747-6fbcae02e203",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-06T08:09:51.141040078Z",
+  "branch": "feature/codex-integration",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "tools/entire-conflict-radar/entire_conflict_radar.py",
+    "tools/entire-conflict-radar/test_entire_conflict_radar.py"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.5",
+  "turn_id": "8192fe5b6b43",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 249198,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 2200704,
+    "output_tokens": 13205,
+    "api_call_count": 27
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-06T08:09:50.725103041Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 349,
+    "human_modified": 18,
+    "human_removed": 0,
+    "total_committed": 349,
+    "total_lines_changed": 367,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 1977,
+      "user_lines_removed": 110,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "LICENSE": 21,
+        "README.md": 716,
+        "completions/entire.bash": 426,
+        "completions/entire.fish": 235,
+        "completions/entire.zsh": 212,
+        "tools/entire-conflict-radar/entire_conflict_radar.py": 209,
+        "tools/entire-conflict-radar/test_entire_conflict_radar.py": 158
+      },
+      "user_removed_per_file": {
+        "README.md": 101,
+        "tools/entire-conflict-radar/entire_conflict_radar.py": 9
+      }
+    }
+  ]
+}
